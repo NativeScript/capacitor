@@ -1,0 +1,2 @@
+include ':capacitor'
+project(':capacitor').projectDir = file("/Users/teodordermendzhiev/workspace/capacitor-integration-demo/capacitor/android/capacitor")
