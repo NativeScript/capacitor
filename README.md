@@ -13,6 +13,8 @@ npx cap sync
 
 See https://capacitor.nativescript.org/
 
+Contribute to docs [here](https://github.com/NativeScript/capacitor-docs)
+
 ## API
 
 <docgen-index>
