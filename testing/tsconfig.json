@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "allowUnreachableCode": false,
+    "declaration": true,
+    "esModuleInterop": true,
+    "lib": ["dom", "es2017"],
+    "module": "ES6",
+    "moduleResolution": "classic",
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": true,
+    "pretty": true,
+    "sourceMap": true,
+    "target": "es5"
+  },
+  "files": ["./browser.ts", "./nativeInterface.ts", "./testingInterface.ts"]
+}
