@@ -11,6 +11,8 @@
     "noUnusedParameters": true,
     "pretty": true,
     "sourceMap": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
     "target": "es5"
   },
   "files": ["./browser.ts", "./nativeInterface.ts", "./testingInterface.ts"]

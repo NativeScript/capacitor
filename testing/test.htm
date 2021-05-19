@@ -4,67 +4,24 @@
 <script src="./browser.js"></script>
 
 <script>
-    function runtests() {
-
+    async function runtests() {
 
         console.log("");
         console.log("Testing Functionality");
 
-        // Test Getter
-/*        native.test.blah.value.then(val => {
-            console.log("value = ", val);
-        }); */
-
-         native.test.blah.get(val => {
-            console.log("Callback Returned =", val);
-        }).then((val) => {
-            console.log("Promise Returned", val)
-         });
-
-        /* cmd: 5
-        extra: "hi"
-        nextObjID: 2
-        parentObject: 0
-        thisArg: "test"
-        tracking: "R2"
-        value: "test.blah"
-        __proto__: Object */
-
-        //native.test.blah = "hi";
         // Test Setter
-        native.test.blah.set('hi').then( () => {
-            native.test.blah.get(val => {
-                console.log("blah = ", val);
-            });
-        });
+        const testString = "hi"
+        await native.test.blah.set(testString);
+        console.log("testString: ", testString)
 
         // Test Getter
-//        setTimeout(() => {
-  //      }, 1000);
 
-/*
-        native.test.funcCall().value.then(val => { console.log("Func returned", val)});
-
-        native.test.funcPromCall(Promise.resolve("hi"), new Promise((r) => { setTimeout(() => r("blah"), 3000); }));
-
-        let callback = (value) => {
-            console.log("Callback ran with", value);
-        };
-
-        native.test.funcCallback(callback); */
+        const str = await native.test.blah.get;
+        console.log("str: ", str)
     }
-
-    // async function f() {
-    //     native.test.blah.set('AHA');
-    //     const str = await native.test.blah.get;
-    //     console.log("str:", str)
-    // }
 
 </script>
 <body onload="setTimeout(runtests, 1000)">
 Testing...
-<button onclick="f()">
-testt
-</button>
 </body>
 </html>

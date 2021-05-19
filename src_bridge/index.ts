@@ -298,7 +298,7 @@ class NativeInterface {
       //this._objectTracking[msg.nextObjID] = result;
       this.sendResponse({
         tracking: msg.tracking,
-        result: result ? result.toString() : '',
+        result: result.toString() ?? '',
       });
     } catch (err) {
       if (this._debugging) {
@@ -443,7 +443,7 @@ class NativeInterface {
           this._objectTracking[msg.nextObjID] = result;
           this.sendResponse({
             tracking: msg.tracking,
-            result: result ? result.toString() : '',
+            result: result.toString() ?? '',
           });
         }
       } catch (err) {
