@@ -260,9 +260,9 @@ if (typeof (<any>window).native === 'undefined') {
 
       // Fire off any Getters on Functions that are awaiting the function finishing...
       if (callbacks.func[NS_PROXY_IS_FUNCTION]) {
-        callbacks.func[NS_FUNCTION_PENDING]--;
-        if (callbacks.func[NS_FUNCTION_PENDING] === 0) {
+        if (callbacks.func[NS_FUNCTION_PENDING] > 0) {
           while (callbacks.func[NS_FUNCTION_PENDING_LIST].length) {
+            callbacks.func[NS_FUNCTION_PENDING]--;
             const func = callbacks.func[NS_FUNCTION_PENDING_LIST].pop();
             func();
           }
@@ -473,65 +473,50 @@ if (typeof (<any>window).native === 'undefined') {
           };
 
         case 'get':
-          return callback => {
-            return NativeScriptProxy.instance
-              .marshall(NS_MARSHALL_GET, target, target[NS_PROXY_PROP])
-              .then(value => {
-                if (typeof callback === 'function') {
-                  callback(value);
+          nativeLog(
+              'Getting Value',
+              target[NS_PROXY_IS_FUNCTION] ? 'Function' : '',
+              target[NS_PROXY_HAS_WAITING_VALUE] ? 'Waiting' : '',
+          );
+          if (
+              target[NS_PROXY_IS_FUNCTION] ||
+              target[NS_PROXY_HAS_WAITING_VALUE]
+          ) {
+            if (typeof target[NS_PROXY_VALUE] !== 'undefined') {
+              const t = Promise.resolve(target[NS_PROXY_VALUE]);
+              target[NS_PROXY_VALUE] = undefined;
+              target[NS_PROXY_HAS_WAITING_VALUE] = false;
+              return t;
+            }
+
+            // If the Function call is still pending, then we have to wait until it is done before we send the get...
+            if (target[NS_FUNCTION_PENDING]) {
+              return new Promise(resolve => {
+                target[NS_FUNCTION_PENDING_LIST].push(resolve);
+              }).then(() => {
+                if (target[NS_PROXY_HAS_WAITING_VALUE]) {
+                  if (typeof target[NS_PROXY_VALUE] !== 'undefined') {
+                    const t = Promise.resolve(target[NS_PROXY_VALUE]);
+                    target[NS_PROXY_VALUE] = undefined;
+                    target[NS_PROXY_HAS_WAITING_VALUE] = false;
+                    return t;
+                  }
                 }
-                return value;
+                return NativeScriptProxy.instance.marshall(
+                    NS_MARSHALL_GET,
+                    target,
+                    target[NS_PROXY_PROP],
+                );
               });
-          };
-      }
-
-      // 'value' is technically obsolete code, but might be useful for chaining later...
-      // Leaving the code temporarily; if we decide we don't need it; kill it with fire...  :-D
-      if (prop === 'value') {
-        nativeLog(
-          'Getting Value',
-          target[NS_PROXY_IS_FUNCTION] ? 'Function' : '',
-          target[NS_PROXY_HAS_WAITING_VALUE] ? 'Waiting' : '',
-        );
-        if (
-          target[NS_PROXY_IS_FUNCTION] ||
-          target[NS_PROXY_HAS_WAITING_VALUE]
-        ) {
-          if (typeof target[NS_PROXY_VALUE] !== 'undefined') {
-            const t = Promise.resolve(target[NS_PROXY_VALUE]);
-            target[NS_PROXY_VALUE] = undefined;
-            target[NS_PROXY_HAS_WAITING_VALUE] = false;
-            return t;
+            }
           }
-
-          // If the Function call is still pending, then we have to wait until it is done before we send the get...
-          if (target[NS_FUNCTION_PENDING]) {
-            return new Promise(resolve => {
-              target[NS_FUNCTION_PENDING_LIST].push(resolve);
-            }).then(() => {
-              if (target[NS_PROXY_HAS_WAITING_VALUE]) {
-                if (typeof target[NS_PROXY_VALUE] !== 'undefined') {
-                  const t = Promise.resolve(target[NS_PROXY_VALUE]);
-                  target[NS_PROXY_VALUE] = undefined;
-                  target[NS_PROXY_HAS_WAITING_VALUE] = false;
-                  return t;
-                }
-              }
-              return NativeScriptProxy.instance.marshall(
-                NS_MARSHALL_GET,
-                target,
-                target[NS_PROXY_PROP],
-              );
-            });
-          }
-        }
-        return NativeScriptProxy.instance.marshall(
-          NS_MARSHALL_GET,
-          target,
-          target[NS_PROXY_PROP],
-        );
-      } else {
-        return NativeScriptProxy.instance.getProxy(target, prop, sub_handler);
+          return NativeScriptProxy.instance.marshall(
+              NS_MARSHALL_GET,
+              target,
+              target[NS_PROXY_PROP],
+          );
+        default:
+          return NativeScriptProxy.instance.getProxy(target, prop, sub_handler);
       }
     }
 

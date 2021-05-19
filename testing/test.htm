@@ -1,0 +1,27 @@
+<html>
+<script src="./testingInterface.js"></script>
+<script src="./nativeInterface.js"></script>
+<script src="./browser.js"></script>
+
+<script>
+    async function runtests() {
+
+        console.log("");
+        console.log("Testing Functionality");
+
+        // Test Setter
+        const testString = "hi"
+        await native.test.blah.set(testString);
+        console.log("testString: ", testString)
+
+        // Test Getter
+
+        const str = await native.test.blah.get;
+        console.log("str: ", str)
+    }
+
+</script>
+<body onload="setTimeout(runtests, 1000)">
+Testing...
+</body>
+</html>
