@@ -6,8 +6,9 @@ const stripJsonComments = require('strip-json-comments');
 
 const [,, ...args] = process.argv;
 // console.log('args:', args);
+// console.log('process.cwd', process.cwd());
 const installOnly = args && args[0] === 'install';
-const projectDir = join(__dirname, '../../../../');
+const projectDir = process.cwd();
 const buildDir = join(
   projectDir,
   'src',
@@ -18,17 +19,62 @@ const capacitorConfigPath = join(projectDir, capacitorConfigName);
 const capacitorConfigNameTS = 'capacitor.config.ts';
 const capacitorConfigTSPath = join(projectDir, capacitorConfigNameTS);
 let distFolder = 'www'; // default
+let isReact = false;
+let isVue = false;
+let isAngular = false;
+let webpackInfo;
+
+const checkFramework = () => {
+  // default is webpack5 config
+  webpackInfo = {
+    name: 'webpack.config.js',
+    version: 5
+  };
+  // As of 9/9/2021, Capacitor 3.0.0:
+  // angular: webpack5
+  // react: webpack4
+  // vue: webpack4
+  const packagePath = join(projectDir, 'package.json');
+  const packageContent = fs.readFileSync(packagePath, {
+    encoding: 'UTF-8',
+  });
+  if (packageContent) {
+    const packageJson = JSON.parse(
+      stripJsonComments(packageContent),
+    );
+    if (packageJson && packageJson.dependencies) {
+      isReact = !!packageJson.dependencies['react'];
+      isVue = !!packageJson.dependencies['vue'];
+      if (isReact || isVue) {
+        webpackInfo = {
+          name: 'webpack4.config.js',
+          version: 4
+        };
+      } else {
+        isAngular = true;
+      }
+    }
+  }
+};
 
 const buildNativeScript = () => {
   // console.log('buildDir:', resolve(buildDir));
-  const configPath = join(
-    projectDir,
-    'node_modules',
-    '@nativescript',
-    'capacitor',
-    'bridge',
-    'webpack.config.js'
-  );
+  
+  // console.log('using webpack config:', webpackInfo.name);
+  
+  const configPath = require.resolve(`@nativescript/capacitor/bridge/${webpackInfo.name}`, {
+    paths: [projectDir]
+  });
+
+  // webpack 5 needs at least one platform set
+  if (webpackInfo.version === 5) {
+    if (args && !args.find(a => a.indexOf('env=platform') > -1)) {
+      // use ios by default when no platform argument is present
+      // won't matter for most users since they will often use conditional logic
+      // but for power users that start using .ios and .android files they can split npm scripts to pass either platform for further optimized builds
+      args.push(`--env=platform=ios`);
+    }
+  }
   // console.log('configPath:', resolve(configPath));
   const cmdArgs = ['webpack', `--config=${resolve(configPath)}`, ...args];
   // console.log('cmdArgs:', cmdArgs);
@@ -64,7 +110,7 @@ const installTsPatch = () => {
   });
 }
 
-const npmInstall = () => {
+const npmInstallTsPatch = () => {
   // Ensure ts-patch is installed
   const child = spawn(`npm`, ['install', '--legacy-peer-deps'], {
     cwd: resolve(buildDir),
@@ -78,6 +124,30 @@ const npmInstall = () => {
     child.kill();
     installTsPatch();
   });
+}
+
+const npmInstall = () => {
+  
+  if (isReact) {
+    // Exception case: React needs ts-loader ^6.2.2 installed
+    const child = spawn(`npm`, ['install', 'ts-loader@6.2.2', '-D'], {
+      cwd: resolve(buildDir),
+      stdio: 'inherit',
+      shell: true,
+    });
+    child.on('error', (error) => {
+      console.log('NativeScript build error:', error);
+    });
+    child.on('close', (res) => {
+      child.kill();
+      installTsPatch();
+    });
+  } else {
+    // Vue projects bring in ts-loader 6.2.2 through vue cli dependencies
+    // Angular project use webpack5 and can use the latest with @nativescript/webpack
+    // proceed as normal
+    npmInstallTsPatch();
+  }
 }
 
 if (!installOnly) {
@@ -112,8 +182,11 @@ if (!installOnly) {
   }
   // defaults to www so only if different do we need to pass the argument
   if (distFolder !== 'www') {
-    args.push(`--env.distFolder=${distFolder}`);
+    args.push(`--env=distFolder=${distFolder}`);
   }
 }
 
+// check frontend framework details
+checkFramework();
+// ensure various deps are installed and setup properly
 npmInstall();

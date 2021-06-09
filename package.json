@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/capacitor",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.5",
   "description": "NativeScript for Capacitor",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -46,7 +46,7 @@
     "swiftlint": "node-swiftlint",
     "docgen": "docgen --api NativeScriptCapPlugin --output-readme README.md --output-json dist/docs.json",
     "build": "npm run clean && npm run docgen && tsc && rollup -c rollup.config.js && npm run build:bridge",
-    "build:bridge": "cd src_bridge && ts-patch install && tsc && cp package.json ../bridge/package.json && cp webpack.config.js ../bridge/webpack.config.js && cp native-custom.d.ts ../bridge/native-custom.d.ts",
+    "build:bridge": "cd src_bridge && ts-patch install && tsc && cp package.json ../bridge/package.json && cp webpack.config.js ../bridge/webpack.config.js && cp webpack4.config.js ../bridge/webpack4.config.js && cp legacy-ns-transform-native-classes.js ../bridge/legacy-ns-transform-native-classes.js && cp native-custom.d.ts ../bridge/native-custom.d.ts",
     "clean": "rimraf ./dist",
     "clean.all": "npx rimraf dist node_modules package-lock.json && npm run setup",
     "setup": "npm i --legacy-peer-deps --ignore-scripts && ts-patch install",
@@ -56,11 +56,11 @@
     "postuninstall": "node dist/esm/postinstall --action uninstall"
   },
   "dependencies": {
-    "@nativescript/webpack": "~4.1.0",
-    "fs-extra": "~9.1.0",
+    "@nativescript/webpack": "beta",
+    "fs-extra": "^9.1.0",
     "nativescript-dev-xcode": "~0.3.0",
     "npm-run-all": "~4.1.5",
-    "strip-json-comments": "~3.1.1",
+    "strip-json-comments": "^3.1.1",
     "ts-node": "^9.1.1",
     "ts-patch": "^1.3.2",
     "unzipper": "^0.10.11",

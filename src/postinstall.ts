@@ -14,6 +14,9 @@ const capacitorConfigPath = path.join(rootPath, capacitorConfigName);
 const capacitorConfigTSPath = path.join(rootPath, capacitorConfigNameTS);
 const xcodeProjName = 'ios/App/App.xcodeproj/project.pbxproj';
 
+// TODO: allow to be installed in {N} projects as well when using CapacitorView
+// const nativeScriptConfig = 'nativescript.config.ts';
+
 function addProjectManagedNativeScript() {
   console.log('⚙️   @nativescript/capacitor installing...');
   /**
@@ -996,6 +999,9 @@ const hasAndroidApp = fs.existsSync(
 //   path.resolve(path.join(rootPath, 'android/app/build.gradle')),
 // );
 // console.log('hasAndroidApp:', hasAndroidApp);
+
+// const isNativeScriptApp = fs.existsSync(path.join(rootPath, nativeScriptConfig));
+// console.log('isNativeScriptApp:', isNativeScriptApp);
 
 const installDeps = () => {
   // Ensure dependencies are installed and ready to use

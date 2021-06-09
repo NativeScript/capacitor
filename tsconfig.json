@@ -17,7 +17,7 @@
     "target": "es2017",
     "plugins": [
       {
-        "transform": "@nativescript/webpack/transformers/ns-transform-native-classes",
+        "transform": "@nativescript/webpack/dist/transformers/NativeClass/index",
         "type": "raw"
       }
     ]

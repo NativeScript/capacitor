@@ -1,129 +1,79 @@
-const { join, relative, resolve, sep } = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
-const hashSalt = Date.now().toString();
-const projectDir = join(__dirname, '../../../../');
-
-module.exports = env => {
-  env = env || {};
-  const { distFolder, production, uglify } = env;
-
-  const srcContext = resolve(join(projectDir, 'src', 'nativescript'));
-  const tsConfigPath = resolve(join(srcContext, 'tsconfig.json'));
-  const coreModulesPackageName = '@nativescript/core';
-  const alias = env.alias || {};
-  const dist = resolve(join(projectDir, distFolder || 'www', 'nativescript'));
-  const itemsToClean = [`${dist}/*`];
-
-  const config = {
-    mode: production ? 'production' : 'development',
-    context: srcContext,
-    entry: {
-      index: './index.ts',
-    },
-    output: {
-      pathinfo: false,
-      path: dist,
-      libraryTarget: 'commonjs2',
-      filename: '[name].js',
-      globalObject: 'global',
-      hashSalt,
-    },
-    resolve: {
-      extensions: ['.ts', '.js'],
-      // Resolve {N} system modules from @nativescript/core
-      modules: [
-        resolve(projectDir, `node_modules/${coreModulesPackageName}`),
-        resolve(projectDir, 'node_modules'),
-        `node_modules/${coreModulesPackageName}`,
-        'node_modules',
-      ],
-      alias,
-      // resolve symlinks to symlinked modules
-      symlinks: true,
-    },
-    resolveLoader: {
-      // don't resolve symlinks to symlinked loaders
-      symlinks: false,
-    },
-    node: {
-      // Disable node shims that conflict with NativeScript
-      http: false,
-      timers: false,
-      setImmediate: false,
-      fs: 'empty',
-      __dirname: false,
-    },
-    devtool: 'none',
-    optimization: {
-      noEmitOnErrors: true,
-      minimize: !!uglify,
-      minimizer: [
-        new TerserPlugin({
-          parallel: true,
-          cache: false,
-          sourceMap: false,
-          terserOptions: {
-            output: {
-              comments: false,
-              semicolons: false,
-            },
-            compress: {
-              // The Android SBG has problems parsing the output
-              // when these options are enabled
-              collapse_vars: false,
-              sequences: false,
-              // For v8 Compatibility
-              keep_infinity: true, // for V8
-              reduce_funcs: false, // for V8
-              // custom
-              drop_console: !!production,
-              drop_debugger: true,
-              global_defs: {
-                __UGLIFIED__: true,
-              },
-            },
-            // Required for Element Level CSS, Observable Events, & Android Frame
-            keep_classnames: true,
-          },
-        }),
-      ],
-    },
-    module: {
-      rules: [
-        {
-          test: /\.ts$/,
-          use: {
-            loader: 'ts-loader',
-            options: {
-              configFile: tsConfigPath,
-              transpileOnly: true,
-              allowTsInNodeModules: true,
-              compilerOptions: {
-                sourceMap: false,
-                declaration: false,
-              },
-              getCustomTransformers: program => ({
-                before: [
-                  require('../../webpack/transformers/ns-transform-native-classes')
-                    .default,
-                ],
-              }),
+const webpack = require("@nativescript/webpack");
+const TerserPlugin = require("terser-webpack-plugin");
+const { resolve } = require("path");
+module.exports = (env) => {
+  const mode = env.production ? 'production' : 'development';
+  webpack.init(env);
+  webpack.useConfig(false);
+  webpack.chainWebpack((config) => {
+    const platform = webpack.Utils.platform.getPlatformName();
+    const projectDir = webpack.Utils.project.getProjectRootPath();
+    const tsConfigPath = webpack.Utils.project.getProjectFilePath(
+      "./tsconfig.json"
+    );
+    config.mode(mode);
+    config.devtool(false);
+    config
+      .entry("index")
+      .add(
+        webpack.Utils.project.getProjectFilePath("./index.ts")
+      );
+    config.output
+      .path(webpack.Utils.project.getProjectFilePath("../../www/nativescript"))
+      .pathinfo(false)
+      .publicPath("")
+      .libraryTarget("commonjs")
+      .globalObject("global")
+      .set("clean", true);
+    // Set up Terser options
+    config.optimization.minimizer("TerserPlugin").use(TerserPlugin, [
+      {
+        terserOptions: {
+          compress: {
+            collapse_vars: false,
+            sequences: false,
+            keep_infinity: true,
+            drop_console: mode === "production",
+            global_defs: {
+              __UGLIFIED__: true,
             },
           },
+          keep_fnames: true,
+          keep_classnames: true,
         },
-      ],
-    },
-    plugins: [
-      // Remove all files from the out dir.
-      new CleanWebpackPlugin({
-        cleanOnceBeforeBuildPatterns: itemsToClean,
-        dry: false,
-        dangerouslyAllowCleanPatternsOutsideProject: true,
-        verbose: false,
-      }),
-    ],
-  };
-
-  return config;
+      },
+    ]);
+    config.resolve.extensions.add(`.${platform}.ts`).add(".ts");
+    // resolve symlinks
+    config.resolve.symlinks(true);
+    // resolve modules in project node_modules first
+    // then fall-back to default node resolution (up the parent folder chain)
+    config.resolve.modules
+      .add(resolve(projectDir, `node_modules/@nativescript/core`))
+      .add(resolve(projectDir, `node_modules`))
+      .add("node_modules");
+    // set up ts support
+    config.module
+      .rule("ts")
+      .test([/\.ts$/])
+      .use("ts-loader")
+      .loader("ts-loader")
+      .options({
+        // todo: perhaps we can provide a default tsconfig
+        // and use that if the project doesn't have one?
+        configFile: tsConfigPath,
+        transpileOnly: true,
+        allowTsInNodeModules: true,
+        compilerOptions: {
+          sourceMap: false,
+          declaration: false,
+        },
+        getCustomTransformers() {
+          return {
+            before: [require("@nativescript/webpack/dist/transformers/NativeClass").default],
+          };
+        },
+      });
+  });
+  return webpack.resolveConfig();
 };
