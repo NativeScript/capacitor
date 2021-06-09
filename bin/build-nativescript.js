@@ -30,31 +30,29 @@ const checkFramework = () => {
     name: 'webpack.config.js',
     version: 5
   };
-  // As of 9/9/2021, Capacitor 3.0.0:
-  // angular: webpack5
-  // react: webpack4
-  // vue: webpack4
-  const packagePath = join(projectDir, 'package.json');
-  const packageContent = fs.readFileSync(packagePath, {
-    encoding: 'UTF-8',
-  });
-  if (packageContent) {
-    const packageJson = JSON.parse(
-      stripJsonComments(packageContent),
-    );
-    if (packageJson && packageJson.dependencies) {
-      isReact = !!packageJson.dependencies['react'];
-      isVue = !!packageJson.dependencies['vue'];
-      if (isReact || isVue) {
-        webpackInfo = {
-          name: 'webpack4.config.js',
-          version: 4
-        };
-      } else {
-        isAngular = true;
-      }
-    }
-  }
+
+  // Note: Left here in case other flavor integrations end up using older webpack
+  // const packagePath = join(projectDir, 'package.json');
+  // const packageContent = fs.readFileSync(packagePath, {
+  //   encoding: 'UTF-8',
+  // });
+  // if (packageContent) {
+  //   const packageJson = JSON.parse(
+  //     stripJsonComments(packageContent),
+  //   );
+  //   if (packageJson && packageJson.dependencies) {
+  //     isReact = !!packageJson.dependencies['react'];
+  //     isVue = !!packageJson.dependencies['vue'];
+  //     if (isVue) {
+  //       webpackInfo = {
+  //         name: 'webpack4.config.js',
+  //         version: 4
+  //       };
+  //     } else {
+  //       isAngular = true;
+  //     }
+  //   }
+  // }
 };
 
 const buildNativeScript = () => {
@@ -128,26 +126,27 @@ const npmInstallTsPatch = () => {
 
 const npmInstall = () => {
   
-  if (isReact) {
-    // Exception case: React needs ts-loader ^6.2.2 installed
-    const child = spawn(`npm`, ['install', 'ts-loader@6.2.2', '-D'], {
-      cwd: resolve(buildDir),
-      stdio: 'inherit',
-      shell: true,
-    });
-    child.on('error', (error) => {
-      console.log('NativeScript build error:', error);
-    });
-    child.on('close', (res) => {
-      child.kill();
-      installTsPatch();
-    });
-  } else {
+  // Note: Left in case flavor integrations need any different dependencies in future
+  // if (isReact) {
+  //   // Exception case: React needs ts-loader ^6.2.2 installed
+  //   const child = spawn(`npm`, ['install', 'ts-loader@6.2.2', '-D'], {
+  //     cwd: resolve(buildDir),
+  //     stdio: 'inherit',
+  //     shell: true,
+  //   });
+  //   child.on('error', (error) => {
+  //     console.log('NativeScript build error:', error);
+  //   });
+  //   child.on('close', (res) => {
+  //     child.kill();
+  //     installTsPatch();
+  //   });
+  // } else {
     // Vue projects bring in ts-loader 6.2.2 through vue cli dependencies
     // Angular project use webpack5 and can use the latest with @nativescript/webpack
     // proceed as normal
     npmInstallTsPatch();
-  }
+  // }
 }
 
 if (!installOnly) {

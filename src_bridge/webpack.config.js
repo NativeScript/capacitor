@@ -3,6 +3,7 @@ const TerserPlugin = require("terser-webpack-plugin");
 const { resolve } = require("path");
 module.exports = (env) => {
   const mode = env.production ? 'production' : 'development';
+  const distFolder = env.distFolder || 'www';
   webpack.init(env);
   webpack.useConfig(false);
   webpack.chainWebpack((config) => {
@@ -19,7 +20,7 @@ module.exports = (env) => {
         webpack.Utils.project.getProjectFilePath("./index.ts")
       );
     config.output
-      .path(webpack.Utils.project.getProjectFilePath("../../www/nativescript"))
+      .path(webpack.Utils.project.getProjectFilePath(`../../${distFolder}/nativescript`))
       .pathinfo(false)
       .publicPath("")
       .libraryTarget("commonjs")
