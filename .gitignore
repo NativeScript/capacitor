@@ -65,3 +65,4 @@ captures
 
 # Executables
 !bin/build-nativescript.js
+!bin/dev-nativescript.js

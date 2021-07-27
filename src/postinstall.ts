@@ -60,6 +60,7 @@ function addProjectManagedNativeScript() {
         const scriptsToAdd = {
           'build:nativescript': `build-nativescript`,
           'build:mobile': `npm-run-all build build:nativescript`,
+          'dev': `dev-nativescript`
         };
         for (const key in scriptsToAdd) {
           if (packageJson.scripts && !packageJson.scripts[key]) {
