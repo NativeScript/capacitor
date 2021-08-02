@@ -61,7 +61,7 @@ const runOnTarget = (targetDevice) => {
 const watchFiles = (targetDevice) => {
     buildApp()
     runOnTarget(targetDevice);
-    console.log("Watching for file changes.");
+    console.log("Watching for file changes...");
 
     chokidar.watch(`${buildDir}/**/*.ts`, {
         interval: 100,
