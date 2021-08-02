@@ -59,7 +59,6 @@ const runOnTarget = (targetDevice) => {
 }
 
 const watchFiles = (targetDevice) => {
-    // ensureLocalDependenciesExists();
     buildApp()
     runOnTarget(targetDevice);
     console.log("Watching for file changes.");
