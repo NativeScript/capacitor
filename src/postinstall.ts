@@ -225,7 +225,7 @@ function installIOS(): Promise<void> {
     if (hasCapacitorConfigJson || hasCapacitorConfigTS) {
       if (fse.existsSync(projectPath)) {
         fs.createReadStream('./embed/ios/NSFrameworks/Frameworks.zip')
-          .pipe(unzipper.Extract({ path: './embed/ios/NSFrameworks' }))
+          .pipe(unzipper.Extract({ path: 'embed/ios/NSFrameworks' }))
           .on('finish', res => {
             // check if already embedded
             const appDelegateContent = fs.readFileSync(appDelegatePath, {
@@ -281,11 +281,11 @@ function installIOS(): Promise<void> {
             xcProj.parse(function (err) {
               //copy frameworks
               fse.copySync(
-                './embed/ios/NSFrameworks/TNSWidgets.xcframework',
+                './embed/ios/NSFrameworks/Frameworks/TNSWidgets.xcframework',
                 path.join(rootPath, 'ios/App/TNSWidgets.xcframework'),
               );
               fse.copySync(
-                './embed/ios/NSFrameworks/NativeScript.xcframework',
+                './embed/ios/NSFrameworks/Frameworks/NativeScript.xcframework',
                 path.join(rootPath, 'ios/App/NativeScript.xcframework'),
               );
               fse.copySync(
