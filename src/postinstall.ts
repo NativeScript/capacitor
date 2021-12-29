@@ -224,8 +224,13 @@ function installIOS(): Promise<void> {
     const hasCapacitorConfigTS = fs.existsSync(capacitorConfigTSPath);
     if (hasCapacitorConfigJson || hasCapacitorConfigTS) {
       if (fse.existsSync(projectPath)) {
+        const extractDest = path.resolve(rootPath, 'node_modules/@nativescript/capacitor/embed/ios/NSFrameworks');
+        // console.log('extractDest:', extractDest)
+        // NOTE: Mac M1 unzips ignoring the `path: extractDest` argument
+        // Ends up with NSFrameworks/Frameworks folder instead of putting contents in NSFrameworks
+        // Mac Intel seems to respect extractDest - need to determine how to handle between either or standardize without an extract path (test without a path argument altogether)
         fs.createReadStream('./embed/ios/NSFrameworks/Frameworks.zip')
-          .pipe(unzipper.Extract({ path: 'embed/ios/NSFrameworks' }))
+          .pipe(unzipper.Extract({ path: extractDest }))
           .on('finish', res => {
             // check if already embedded
             const appDelegateContent = fs.readFileSync(appDelegatePath, {
@@ -233,7 +238,7 @@ function installIOS(): Promise<void> {
             });
             if (
               appDelegateContent &&
-              appDelegateContent.indexOf('TNSRuntime.init') === -1
+              appDelegateContent.indexOf('NativeScript.init') === -1
             ) {
               // update delegate
               // console.log("Updating AppDelegate from:");
@@ -246,7 +251,7 @@ function installIOS(): Promise<void> {
                 modifyPart1.splice(
                   uiWinIndex + winVar.length + 1,
                   0,
-                  `    var runtime: TNSRuntime?\n`,
+                  `    var nativescript: NativeScript?\n`,
                 );
                 let updatedDelegate = modifyPart1.join('');
                 const didFinishLaunch = `UIApplication.LaunchOptionsKey: Any]?) -> Bool {`;
@@ -259,10 +264,16 @@ function installIOS(): Promise<void> {
                   didFinishLaunchIndex + didFinishLaunch.length + 1,
                   0,
                   `        // NativeScript init
-                let pointer = runtimeMeta()
-                TNSRuntime.initializeMetadata(pointer)
-                self.runtime = TNSRuntime.init(applicationPath: Bundle.main.bundlePath)
-                self.runtime?.executeModule("../public/nativescript/index.js")\n`,
+        let nsConfig = Config.init()
+        nsConfig.metadataPtr = runtimeMeta()
+        // can turn off in production
+        nsConfig.isDebug = true
+        nsConfig.logToSystemConsole = nsConfig.isDebug
+        nsConfig.baseDir = URL(string: "public", relativeTo: Bundle.main.resourceURL)?.path
+        nsConfig.applicationPath = "nativescript"
+        // nsConfig.argumentsCount = 0
+        // nsConfig.arguments = []
+        self.nativescript = NativeScript.init(config: nsConfig)\n`,
                 );
                 updatedDelegate = modifyPart2.join('');
                 // save updates

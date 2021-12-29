@@ -4,6 +4,11 @@ This guide provides instructions for contributing to this Capacitor plugin.
 
 ## Developing
 
+**Prerequisites:** 
+
+1. Install `git-lfs`, e.g. `brew install git-lfs`. There are also [other ways to install it if you prefer an alternate](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage).
+2. Ensure it's installed: `git lfs install`
+
 ### Local Setup
 
 1. Fork and clone the repo.
