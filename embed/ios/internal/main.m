@@ -13,7 +13,6 @@
 #endif
 
 extern char startOfMetadataSection __asm("section$start$__DATA$__TNSMetadata");
-extern char startOfSwiftMetadataSection __asm("section$start$__DATA$__SwiftMetadata");
 
 int main(int argc, char *argv[]) {
     @autoreleasepool {
@@ -32,14 +31,12 @@ int main(int argc, char *argv[]) {
             }
         });
 
-        // TNSInitializeLiveSync();
         if (getenv("TNSBaseDir")) {
             baseDir = @(getenv("TNSBaseDir"));
         }
 #endif
 
         void* metadataPtr = &startOfMetadataSection;
-        void* swiftMetadataPtr = &startOfSwiftMetadataSection;
 
         bool isDebug =
 #ifdef DEBUG
@@ -52,12 +49,11 @@ int main(int argc, char *argv[]) {
         config.IsDebug = isDebug;
         config.LogToSystemConsole = isDebug;
         config.MetadataPtr = metadataPtr;
-        config.SwiftMetadataPtr = swiftMetadataPtr;
         config.BaseDir = baseDir;
         config.ArgumentsCount = argc;
         config.Arguments = argv;
 
-        [NativeScript start:config];
+        [[NativeScript alloc] initWithConfig:config];
 
         return 0;
     }
