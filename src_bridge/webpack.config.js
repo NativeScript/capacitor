@@ -1,4 +1,5 @@
 const webpack = require("@nativescript/webpack");
+const { PlatformSuffixPlugin } = require("@nativescript/webpack/dist/plugins/PlatformSuffixPlugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const { resolve } = require("path");
 module.exports = (env) => {
@@ -14,6 +15,8 @@ module.exports = (env) => {
     );
     config.mode(mode);
     config.devtool(false);
+    config.target('node');
+    config.resolve.mainFields.prepend('main');
     config
       .entry("index")
       .add(
@@ -44,7 +47,14 @@ module.exports = (env) => {
         },
       },
     ]);
-    config.resolve.extensions.add(`.${platform}.ts`).add(".ts");
+    config.plugin('PlatformSuffixPlugin').use(PlatformSuffixPlugin, [
+      {
+          platform,
+      },
+    ]);
+    config.resolve.extensions.add(`.${platform}.ts`).add(".ts").add(`.${platform}.js`)
+    .add('.js');
+    config.resolve.alias.set('~', projectDir);
     // resolve symlinks
     config.resolve.symlinks(true);
     // resolve modules in project node_modules first
