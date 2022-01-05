@@ -290,15 +290,6 @@ function installIOS(): Promise<void> {
             // console.log("Looking for xcode project at ", path.resolve(path.join(rootPath, 'ios/App/')));
 
             xcProj.parse(function (err) {
-              //copy frameworks
-              fse.copySync(
-                './embed/ios/NSFrameworks/Frameworks/TNSWidgets.xcframework',
-                path.join(rootPath, 'ios/App/TNSWidgets.xcframework'),
-              );
-              fse.copySync(
-                './embed/ios/NSFrameworks/Frameworks/NativeScript.xcframework',
-                path.join(rootPath, 'ios/App/NativeScript.xcframework'),
-              );
               fse.copySync(
                 './embed/ios/internal',
                 path.join(rootPath, 'ios/App/internal'),
@@ -421,20 +412,20 @@ function installIOS(): Promise<void> {
               }
 
               // add frameworks
-              const nsframeworkRelativePath = 'NativeScript.xcframework';
-              xcProj.addFramework(nsframeworkRelativePath, {
-                embed: true,
-                sign: true,
-                customFramework: true,
-                target: xcProj.getFirstTarget().uuid,
+              const nativeScriptPath = "Pods/NativeScript/NativeScript.xcframework";
+              const nativeScriptUIPath = "Pods/NativeScriptUI/TNSWidgets.xcframework";
+              xcProj.addFramework(nativeScriptPath, {
+                  embed: false,
+                  sign: false,
+                  customFramework: true,
+                  target: xcProj.getFirstTarget().uuid,
               });
 
-              const tnswidgetsRelativePath = 'TNSWidgets.xcframework';
-              xcProj.addFramework(tnswidgetsRelativePath, {
-                embed: true,
-                sign: true,
-                customFramework: true,
-                target: xcProj.getFirstTarget().uuid,
+              xcProj.addFramework(nativeScriptUIPath, {
+                  embed: false,
+                  sign: false,
+                  customFramework: true,
+                  target: xcProj.getFirstTarget().uuid,
               });
 
               xcProj.addToHeaderSearchPaths('$(SRCROOT)/NativeScript');
