@@ -231,8 +231,6 @@ function installIOS(): Promise<void> {
         nsConfig.logToSystemConsole = nsConfig.isDebug
         nsConfig.baseDir = URL(string: "public", relativeTo: Bundle.main.resourceURL)?.path
         nsConfig.applicationPath = "nativescript"
-        // nsConfig.argumentsCount = 0
-        // nsConfig.arguments = []
         self.nativescript = NativeScript.init(config: nsConfig)\n`
             );
             updatedDelegate = modifyPart2.join('');
