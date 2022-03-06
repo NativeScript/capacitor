@@ -14,6 +14,14 @@ const capacitorConfigPath = path.join(rootPath, capacitorConfigName);
 const capacitorConfigTSPath = path.join(rootPath, capacitorConfigNameTS);
 const xcodeProjName = 'ios/App/App.xcodeproj/project.pbxproj';
 
+const podFilePostInstall = `
+post_install do |installer|
+  nativescript_capacitor_post_install(installer)
+end
+            `
+const podFileNSPods = `\n pod 'NativeScript' \n pod 'NativeScriptUI'\n`;
+const requireNSCode = `require_relative '../../node_modules/@nativescript/capacitor/ios/nativescript.rb'\n`;
+
 // TODO: allow to be installed in {N} projects as well when using CapacitorView
 // const nativeScriptConfig = 'nativescript.config.ts';
 
@@ -191,8 +199,10 @@ src/nativescript/package-lock.json
 function installIOS(): Promise<void> {
   const appDelegateFileName = 'ios/App/App/AppDelegate.swift';
   const xcodeProjName = 'ios/App/App.xcodeproj/project.pbxproj';
+  const podfileName = 'ios/App/Podfile';
   const xcode = require('nativescript-dev-xcode'),
     projectPath = path.join(rootPath, xcodeProjName),
+    podfilePath = path.join(rootPath, podfileName),
     appDelegatePath = path.join(rootPath, appDelegateFileName);
   // console.log('projectPath:', path.resolve(projectPath));
 
@@ -200,6 +210,31 @@ function installIOS(): Promise<void> {
     const hasCapacitorConfigJson = fs.existsSync(capacitorConfigPath);
     const hasCapacitorConfigTS = fs.existsSync(capacitorConfigTSPath);
     if (hasCapacitorConfigJson || hasCapacitorConfigTS) {
+      console.log("Checking for Podfile...");
+      if (fse.existsSync(podfilePath)) {
+        const podfileContent = fs.readFileSync(podfilePath, {
+          encoding: 'UTF-8',
+        });
+
+        if (podfileContent && podfileContent.indexOf("pod 'NativeScript'") === -1) {
+          if (podfileContent) {
+            
+            const podsComment = "Add your Pods here";
+            const podsCommentIndex = podfileContent.indexOf(podsComment);
+            const modifyPartPods = podfileContent.split('');
+            modifyPartPods.splice(podsCommentIndex + podsComment.length + 1, 0, podFileNSPods)
+            let updatedPodfile = modifyPartPods.join('');
+            
+            updatedPodfile = requireNSCode + updatedPodfile + podFilePostInstall;
+
+            fs.writeFileSync(podfilePath, updatedPodfile);
+            console.log('UPDATED:', podfilePath);
+          }
+        }
+      } else {
+        console.log("Podfile doesn't exist");
+      }
+
       if (fse.existsSync(projectPath)) {
         // check if already embedded
         const appDelegateContent = fs.readFileSync(appDelegatePath, {
@@ -240,204 +275,7 @@ function installIOS(): Promise<void> {
           }
         }
 
-        // XCode embedding
-        const xcProj = xcode.project(projectPath);
 
-        // console.log('rootPath:', path.resolve(rootPath));
-
-        // console.log("Looking for xcode project at ", path.resolve(path.join(rootPath, 'ios/App/')));
-
-        xcProj.parse(function (err) {
-          fse.copySync('./embed/ios/internal', path.join(rootPath, 'ios/App/internal'));
-          fse.copySync('./embed/ios/NativeScript', path.join(rootPath, 'ios/App/NativeScript'));
-
-          //  add runtime files
-          const group = getRootGroup('NativeScript', path.join(rootPath, 'ios/App/NativeScript'));
-          // console.log(group)
-          xcProj.addPbxGroup(group.files, group.name, group.path, null, {
-            isMain: true,
-            filesRelativeToProject: true,
-          });
-
-          let hasPreBuild = false;
-          let hasPreLink = false;
-          let hasPostBuild = false;
-          let hasEmbedFrameworks = false;
-
-          //  check for each build phase
-          let nativeTargetSection = xcProj.pbxNativeTargetSection();
-          for (const key in nativeTargetSection) {
-            if (Object.hasOwnProperty.call(nativeTargetSection, key)) {
-              const el = nativeTargetSection[key];
-              if (el.buildPhases) {
-                let newBuildPhases = el.buildPhases;
-                for (let i = 0; i < el.buildPhases.length; i++) {
-                  const phase = el.buildPhases[i];
-                  if (phase.comment === 'PreBuild') {
-                    hasPreBuild = true;
-                  }
-
-                  if (phase.comment === 'PreLink') {
-                    hasPreLink = true;
-                  }
-
-                  if (phase.comment === 'PostBuild') {
-                    hasPostBuild = true;
-                  }
-
-                  if (phase.comment === 'Embed Frameworks') {
-                    hasEmbedFrameworks = true;
-                  }
-                }
-                el.buildPhases = newBuildPhases;
-              }
-            }
-          }
-
-          // add non-existing build phases
-          if (!hasPreBuild) {
-            addPreBuild(xcProj);
-          }
-
-          if (!hasPreLink) {
-            addPreLink(xcProj);
-          }
-
-          // if (!hasPostBuild) {
-          //     addPostBuild(xcProj);
-          // }
-
-          if (!hasEmbedFrameworks) {
-            addEmbedFrameworks(xcProj);
-          }
-
-          //  sort build phases
-          for (const key in nativeTargetSection) {
-            if (Object.hasOwnProperty.call(nativeTargetSection, key)) {
-              const el = nativeTargetSection[key];
-              if (el.buildPhases) {
-                let newBuildPhases = new Array(8); // TODO: dont forget to update this
-                for (let i = 0; i < el.buildPhases.length; i++) {
-                  const phase = el.buildPhases[i];
-                  if (phase.comment === '[CP] Check Pods Manifest.lock') {
-                    newBuildPhases[0] = phase;
-                  }
-
-                  if (phase.comment === 'PreBuild') {
-                    newBuildPhases[1] = phase;
-                  }
-
-                  if (phase.comment === 'Sources') {
-                    newBuildPhases[2] = phase;
-                  }
-
-                  if (phase.comment === 'PreLink') {
-                    newBuildPhases[3] = phase;
-                  }
-
-                  if (phase.comment === 'Frameworks') {
-                    newBuildPhases[4] = phase;
-                  }
-
-                  if (phase.comment === 'Resources') {
-                    newBuildPhases[5] = phase;
-                  }
-
-                  if (phase.comment === '[CP] Embed Pods Frameworks') {
-                    newBuildPhases[6] = phase;
-                  }
-
-                  if (phase.comment === 'Embed Frameworks') {
-                    newBuildPhases[7] = phase;
-                  }
-
-                  // if (phase.comment === "PostBuild") {
-                  //     newBuildPhases[9] = phase;
-                  // }
-                }
-                el.buildPhases = newBuildPhases;
-              }
-            }
-          }
-
-          // add frameworks
-          const nativeScriptPath = 'Pods/NativeScript/NativeScript.xcframework';
-          const nativeScriptUIPath = 'Pods/NativeScriptUI/TNSWidgets.xcframework';
-          xcProj.addFramework(nativeScriptPath, {
-            embed: false,
-            sign: false,
-            customFramework: true,
-            target: xcProj.getFirstTarget().uuid,
-          });
-
-          xcProj.addFramework(nativeScriptUIPath, {
-            embed: false,
-            sign: false,
-            customFramework: true,
-            target: xcProj.getFirstTarget().uuid,
-          });
-
-          xcProj.addToHeaderSearchPaths('$(SRCROOT)/NativeScript');
-
-          xcProj.addToBuildSettings('SWIFT_OBJC_BRIDGING_HEADER', '"$(SRCROOT)/NativeScript/App-Bridging-Header.h"');
-
-          xcProj.addToBuildSettings(
-            'OTHER_LDFLAGS',
-            '(\r\n\t\t\t\t\t"$(inherited)",\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\t"\\"Capacitor\\"",\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\t"\\"Cordova\\"",\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\t"\\"WebKit\\"",\r\n\t\t\t\t\t"$(inherited)",\r\n\t\t\t\t\t"-ObjC",\r\n\t\t\t\t\t"-sectcreate",\r\n\t\t\t\t\t__DATA,\r\n\t\t\t\t\t__TNSMetadata,\r\n\t\t\t\t\t"\\"$(CONFIGURATION_BUILD_DIR)/metadata-$(CURRENT_ARCH).bin\\"",\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\tNativeScript,\r\n\t\t\t\t\t"-F\\"$(SRCROOT)/internal\\"",\r\n\t\t\t\t\t"-licucore",\r\n\t\t\t\t\t"-lz",\r\n\t\t\t\t\t"-lc++",\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\tFoundation,\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\tUIKit,\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\tCoreGraphics,\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\tMobileCoreServices,\r\n\t\t\t\t\t"-framework",\r\n\t\t\t\t\tSecurity,\r\n\t\t\t\t)'
-          );
-          xcProj.addToBuildSettings('LD', '"$SRCROOT/internal/nsld.sh"');
-          xcProj.addToBuildSettings('LDPLUSPLUS', '"$SRCROOT/internal/nsld.sh"');
-          xcProj.addToBuildSettings('ENABLE_BITCODE', 'NO');
-          xcProj.addToBuildSettings('CLANG_ENABLE_MODULES', 'NO');
-
-          fs.writeFileSync(projectPath, xcProj.writeSync());
-
-          resolve();
-        });
-
-        function addPreBuild(proj) {
-          proj.addBuildPhase([], 'PBXShellScriptBuildPhase', 'PreBuild', null, {
-            shellPath: '/bin/sh',
-            shellScript: '"${SRCROOT}/internal/nativescript-pre-build"',
-          });
-        }
-
-        function addPreLink(proj) {
-          proj.addBuildPhase([], 'PBXShellScriptBuildPhase', 'PreLink', null, {
-            shellPath: '/bin/sh',
-            shellScript: '"${SRCROOT}/internal/nativescript-pre-link"',
-          });
-        }
-
-        function addPostBuild(proj) {
-          proj.addBuildPhase([], 'PBXShellScriptBuildPhase', 'PostBuild', null, {
-            shellPath: '/bin/sh',
-            shellScript: '"${SRCROOT}/internal/nativescript-post-build"',
-          });
-        }
-
-        function addEmbedFrameworks(proj) {
-          //needed for embed&sign
-          proj.addBuildPhase([], 'PBXCopyFilesBuildPhase', 'Embed Frameworks', null, 'frameworks');
-        }
-
-        function getRootGroup(name, rootPath) {
-          const filePathsArr = [];
-          const rootGroup = {
-            name: name,
-            files: filePathsArr,
-            path: rootPath,
-          };
-
-          if (fs.existsSync(rootPath)) {
-            fs.readdirSync(rootPath).forEach((fileName) => {
-              const filePath = path.join(rootGroup.path, fileName);
-              filePathsArr.push(filePath);
-            });
-          }
-
-          return rootGroup;
-        }
       } else {
         console.error(
           'ERROR: @nativescript/capacitor requires a Capacitor iOS target to be initialized. Be sure you have "npx cap add ios" in this project before installing.\n\n'
@@ -450,73 +288,6 @@ function installIOS(): Promise<void> {
       );
       resolve();
     }
-  });
-}
-
-function uninstallIOS(): Promise<void> {
-  return new Promise((resolve) => {
-    const appDelegateFileName = 'ios/App/App/AppDelegate.swift';
-    const xcodeProjName = 'ios/App/App.xcodeproj/project.pbxproj';
-    const xcode = require('nativescript-dev-xcode'),
-      projectPath = path.join(rootPath, xcodeProjName),
-      appDelegatePath = path.join(rootPath, appDelegateFileName);
-
-    const appDelegateContent = fs.readFileSync(appDelegatePath, {
-      encoding: 'UTF-8',
-    });
-    if (appDelegateContent && appDelegateContent.indexOf('TNSRuntime.init') > -1) {
-      let updatedDelegate = appDelegateContent.replace('var runtime: TNSRuntime?', '');
-      updatedDelegate = updatedDelegate.replace('// NativeScript init', '');
-      updatedDelegate = updatedDelegate.replace('let pointer = runtimeMeta()', '');
-      updatedDelegate = updatedDelegate.replace('TNSRuntime.initializeMetadata(pointer)', '');
-      updatedDelegate = updatedDelegate.replace(
-        'self.runtime = TNSRuntime.init(applicationPath: Bundle.main.bundlePath)',
-        ''
-      );
-      updatedDelegate = updatedDelegate.replace('self.runtime?.executeModule("../public/nativescript/index.js")', '');
-
-      fs.writeFileSync(appDelegatePath, updatedDelegate);
-      console.log('UPDATED:', appDelegateFileName);
-    }
-
-    const xcProj = xcode.project(projectPath);
-
-    xcProj.parse(function (err) {
-      deleteFolderRecursive(path.join(rootPath, 'ios/App/TNSWidgets.xcframework'));
-      deleteFolderRecursive(path.join(rootPath, 'ios/App/TNSWidgets.xcframework'));
-
-      deleteFolderRecursive(path.join(rootPath, 'ios/App/internal'));
-      deleteFolderRecursive(path.join(rootPath, 'ios/App/NativeScript'));
-      xcProj.removePbxGroup('NativeScript');
-
-      const phases = [
-        'PreBuild',
-        'PreLink',
-        // 'PostBuild',
-        'Embed Frameworks',
-      ];
-
-      //TODO: if the build phase has files with it we have to remove them as well
-      for (let i = 0; i < phases.length; i++) {
-        const phase = phases[i];
-        xcProj.removeBuildPhase(phase);
-      }
-
-      const nsframeworkRelativePath = 'NativeScript.xcframework';
-      xcProj.removeFramework(nsframeworkRelativePath);
-      const tnswidgetsRelativePath = 'TNSWidgets.xcframework';
-      xcProj.removeFramework(tnswidgetsRelativePath);
-      // xcProj.removeFromHeaderSearchPaths('$(SRCROOT)/NativeScript')
-      xcProj.removeFromBuildSettings('SWIFT_OBJC_BRIDGING_HEADER');
-      xcProj.removeFromBuildSettings('OTHER_LDFLAGS');
-      xcProj.removeFromBuildSettings('LD');
-      xcProj.removeFromBuildSettings('LDPLUSPLUS');
-      xcProj.addToBuildSettings('ENABLE_BITCODE', 'YES');
-      xcProj.addToBuildSettings('CLANG_ENABLE_MODULES', 'YES');
-
-      fs.writeFileSync(projectPath, xcProj.writeSync());
-      resolve();
-    });
   });
 }
 
@@ -869,9 +640,8 @@ if (argv.action === 'install') {
 
 if (argv.action === 'uninstall') {
   if (hasIosApp) {
-    uninstallIOS().then(() => {
-      uninstallAndroid();
-    });
+    //uninstall not available
+    console.log("uninstall not available")
   } else if (hasAndroidApp) {
     uninstallAndroid();
   }

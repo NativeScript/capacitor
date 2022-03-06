@@ -13,6 +13,7 @@
     "bridge/",
     "dist/",
     "ios/Plugin/",
+    "ios/nativescript.rb",
     "NativescriptCapacitor.podspec",
     "embed/",
     "src/nativescript/"
