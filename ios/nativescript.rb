@@ -48,28 +48,43 @@ def nativescript_post_install(installer)
    
    
    sources_index = nil
+   has_prebuild = false
+   has_prelink = false
    main_target.build_phases.each_with_index do |phase, i|
      if phase.class.name == "Xcodeproj::Project::Object::PBXSourcesBuildPhase"
        sources_index = i
      end
-   end
-   
-   pre_build = main_target.new_shell_script_build_phase("NativeScript PreBuild")
-   pre_build.shell_script = "${SRCROOT}/internal/nativescript-pre-build"
-   
-   main_target.build_phases.move_from(main_target.build_phases.length-1, sources_index)
-   
-   link_index = nil
-   main_target.build_phases.each_with_index do |phase, i|
-     if phase.class.name == "Xcodeproj::Project::Object::PBXFrameworksBuildPhase"
-       link_index = i
+     if phase.display_name == "NativeScript PreBuild"
+        has_prebuild = true
+     end
+     if phase.display_name == "NativeScript PreLink"
+        has_prelink = true
      end
    end
    
-   pre_link = main_target.new_shell_script_build_phase("NativeScript PreLink")
-   pre_link.shell_script = "${SRCROOT}/internal/nativescript-pre-link"
+   if !has_prebuild
+    pre_build = main_target.new_shell_script_build_phase("NativeScript PreBuild")
+    pre_build.shell_script = "${SRCROOT}/internal/nativescript-pre-build"
    
-   main_target.build_phases.move_from(main_target.build_phases.length-1, link_index)
+    main_target.build_phases.move_from(main_target.build_phases.length-1, sources_index)
+   end
+   
+   
+   if !has_prelink
+    link_index = nil
+    main_target.build_phases.each_with_index do |phase, i|
+      if phase.class.name == "Xcodeproj::Project::Object::PBXFrameworksBuildPhase"
+        link_index = i
+      end
+    end
+    
+    pre_link = main_target.new_shell_script_build_phase("NativeScript PreLink")
+    pre_link.shell_script = "${SRCROOT}/internal/nativescript-pre-link"
+    
+    main_target.build_phases.move_from(main_target.build_phases.length-1, link_index)
+
+   end
+ 
    
    
 end
@@ -271,13 +286,26 @@ def nativescript_capacitor_post_install(installer)
 
   state_hash['added_dirs'] = [ns_dir_dest]
 
-  ns_group = user_project.new_group('NativeScript')
-  ns_path = ns_dir_dest
-  addfiles("#{ns_path}/*", ns_group, main_target)
+  has_ns_group = false
+  user_project.groups.each do |group|
+    if group.name == 'NativeScript'
+      has_ns_group = true
+    end
+  end
 
-  state_hash['added_groups'] = ["NativeScript"]
+  if !has_ns_group
+    ns_group = user_project.new_group('NativeScript')
+    ns_path = ns_dir_dest
+    addfiles("#{ns_path}/*", ns_group, main_target)
 
-  save_ns_state_hash(state_hash, user_project)
+    state_hash['added_groups'] = ["NativeScript"]
+
+    #don't save state if its not first time NS install
+    save_ns_state_hash(state_hash, user_project)
+
+  end
+  
+  
 
   user_project.save
   
