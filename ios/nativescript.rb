@@ -182,9 +182,9 @@ def restore_state(user_project)
        state_hash[config.name]["settings"].each do |key, value|
          if value
            config.build_settings[key] = value
-           puts key
+           puts "Restoring setting: " + key
          else
-           puts "deleting key " + key
+           puts "Deleting setting: " + key
            config.build_settings.delete(key)
          end
        end
@@ -192,7 +192,7 @@ def restore_state(user_project)
      
      main_target.build_phases.each do |phase|
        unless state_hash["main_target_build_phases"].include? phase.to_s
-        puts "REMOVING PHASE:"
+        puts "Removing build phase:"
         puts phase.to_s
          phase.remove_from_project
        end
