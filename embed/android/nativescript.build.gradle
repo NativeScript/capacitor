@@ -1,4 +1,3 @@
-import groovy.io.FileType
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency
 import org.gradle.internal.logging.text.StyledTextOutputFactory
 
@@ -341,69 +340,13 @@ def getMergedAssetsOutputPath() {
 // Discover all jars and dynamically create tasks for the extraction of each of them
 project.ext.allJars = []
 afterEvaluate { project ->
-    def buildType = project.selectedBuildType == "release" ? "Release" : "Debug"
+    def buildType = project.selectedBuildType
     def jars = []
     def artifactType = Attribute.of('artifactType', String)
-    configurations.all { config ->
-        if (config.name.toLowerCase().endsWith("${buildType}RuntimeClasspath".toLowerCase())) {
-            config.incoming.artifactView {
-                attributes {
-                    it.attribute(artifactType, 'jar')
-                }
-            }.artifacts.each {
-                processJar(it.file, jars)
-            }
-
-            def projectDependencies = config.getAllDependencies().withType(ProjectDependency)
-            def moduleDependencies = config.getAllDependencies().withType(ModuleDependency)
-
-            moduleDependencies.forEach {
-                if(it instanceof DefaultProjectDependency){
-                    return
-                }
-                def file = project.getConfigurations().detachedConfiguration(it)
-
-                 file.forEach {
-                     if (it.exists()) {
-                         if (it.path.endsWith(".jar")) {
-                             processJar(it, jars)
-                         }else if (it.path.endsWith(".aar")) {
-                              def destDir = md5(it.path)
-                             def outputDir = new File(Paths.get(aarDependenciesDir, destDir).normalize().toString())
-                             explodeAar(it, outputDir)
-                             outputDir.eachFileRecurse {
-                                 if (it.name.endsWith(".jar")) {
-                                     processJar(it, jars)
-                                 }
-                             }
-                         }
-                     } else {
-                         outLogger.withStyle(Style.Info).println "WARNING: Folder ${it.path} does not exists, the dependent project's classes won't be included in the metadata"
-                     }
-                 }
-
-            }
-            // def dependentProjects = projectDependencies*.dependency
-            projectDependencies.forEach {
-                it = it.getDependencyProject()
-
-                // if there's a project dependency search for its result jar file in the build/intermediates/runtime_library_classes folder
-                // this is the output folder in gradle 5.1.1, but it can be changed in the future versions of gradle
-                def jarDir = new File("${it.getBuildDir()}/intermediates/runtime_library_classes/${buildType.toLowerCase()}")
-
-                // gradle 6.5
-                if (!jarDir.exists()) {
-                    jarDir = new File("${it.getBuildDir()}/intermediates/runtime_library_classes_jar/${buildType.toLowerCase()}")
-                }
-                if (jarDir.exists()) {
-                    jarDir.eachFileRecurse(FileType.FILES) { file ->
-                        if (file.path.endsWith(".jar")) {
-                            processJar(file, jars)
-                        }
-                    }
-                } else {
-                    outLogger.withStyle(Style.Info).println "WARNING: Folder ${jarDir.path} does not exists, the dependent project's classes won't be included in the metadata"
-                }
+    android.applicationVariants.all { variant ->
+        if (variant.buildType.name == buildType) {
+            variant.getCompileClasspath().each { fileDependency ->
+               processJar(fileDependency, jars)
             }
         }
     }

@@ -111,7 +111,7 @@ public final class RuntimeHelper {
                         boolean removePreviouslyInstalledAssets = true;
                         aE.extractAssets(context, "public", outputDir, extractPolicy, removePreviouslyInstalledAssets);
                         aE.extractAssets(context, "internal", outputDir, extractPolicy, removePreviouslyInstalledAssets);
-                        aE.extractAssets(context, "metadata", outputDir, extractPolicy, false);
+                        aE.extractAssets(context, "metadata", outputDir, extractPolicy, removePreviouslyInstalledAssets);
 
                         boolean shouldExtractSnapshots = true;
 
