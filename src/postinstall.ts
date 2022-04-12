@@ -18,7 +18,7 @@ const podFilePostInstall = `
 post_install do |installer|
   nativescript_capacitor_post_install(installer)
 end
-            `
+            `;
 const podFileNSPods = `\n pod 'NativeScript' \n pod 'NativeScriptUI'\n`;
 const requireNSCode = `require_relative '../../node_modules/@nativescript/capacitor/ios/nativescript.rb'\n`;
 
@@ -210,7 +210,7 @@ function installIOS(): Promise<void> {
     const hasCapacitorConfigJson = fs.existsSync(capacitorConfigPath);
     const hasCapacitorConfigTS = fs.existsSync(capacitorConfigTSPath);
     if (hasCapacitorConfigJson || hasCapacitorConfigTS) {
-      console.log("Checking for Podfile...");
+      console.log('Checking for Podfile...');
       if (fse.existsSync(podfilePath)) {
         const podfileContent = fs.readFileSync(podfilePath, {
           encoding: 'UTF-8',
@@ -218,13 +218,12 @@ function installIOS(): Promise<void> {
 
         if (podfileContent && podfileContent.indexOf("pod 'NativeScript'") === -1) {
           if (podfileContent) {
-            
-            const podsComment = "Add your Pods here";
+            const podsComment = 'Add your Pods here';
             const podsCommentIndex = podfileContent.indexOf(podsComment);
             const modifyPartPods = podfileContent.split('');
-            modifyPartPods.splice(podsCommentIndex + podsComment.length + 1, 0, podFileNSPods)
+            modifyPartPods.splice(podsCommentIndex + podsComment.length + 1, 0, podFileNSPods);
             let updatedPodfile = modifyPartPods.join('');
-            
+
             updatedPodfile = requireNSCode + updatedPodfile + podFilePostInstall;
 
             fs.writeFileSync(podfilePath, updatedPodfile);
@@ -244,21 +243,21 @@ function installIOS(): Promise<void> {
           // update delegate
           // console.log("Updating AppDelegate from:");
           // console.log(path.resolve(appDelegatePath));
-          if (appDelegateContent) {
-            const winVar = 'window: UIWindow?';
-            const uiWinIndex = appDelegateContent.indexOf(winVar);
-            const modifyPart1 = appDelegateContent.split('');
-            // add runtime var
-            modifyPart1.splice(uiWinIndex + winVar.length + 1, 0, `    var nativescript: NativeScript?\n`);
-            let updatedDelegate = modifyPart1.join('');
-            const didFinishLaunch = `UIApplication.LaunchOptionsKey: Any]?) -> Bool {`;
-            const didFinishLaunchIndex = updatedDelegate.indexOf(didFinishLaunch);
-            const modifyPart2 = updatedDelegate.split('');
-            // add runtime init
-            modifyPart2.splice(
-              didFinishLaunchIndex + didFinishLaunch.length + 1,
-              0,
-              `        // NativeScript init
+
+          const winVar = 'window: UIWindow?';
+          const uiWinIndex = appDelegateContent.indexOf(winVar);
+          const modifyPart1 = appDelegateContent.split('');
+          // add runtime var
+          modifyPart1.splice(uiWinIndex + winVar.length + 1, 0, `    var nativescript: NativeScript?\n`);
+          let updatedDelegate = modifyPart1.join('');
+          const didFinishLaunch = `UIApplication.LaunchOptionsKey: Any]?) -> Bool {`;
+          const didFinishLaunchIndex = updatedDelegate.indexOf(didFinishLaunch);
+          const modifyPart2 = updatedDelegate.split('');
+          // add runtime init
+          modifyPart2.splice(
+            didFinishLaunchIndex + didFinishLaunch.length + 1,
+            0,
+            `        // NativeScript init
         let nsConfig = Config.init()
         nsConfig.metadataPtr = runtimeMeta()
         // can turn off in production
@@ -268,15 +267,15 @@ function installIOS(): Promise<void> {
         nsConfig.applicationPath = "nativescript"
         self.nativescript = NativeScript.init(config: nsConfig)\n
         self.nativescript?.runMainScript()\n`
-            );
-            updatedDelegate = modifyPart2.join('');
-            // save updates
-            fs.writeFileSync(appDelegatePath, updatedDelegate);
-            console.log('UPDATED:', appDelegateFileName);
-          }
+          );
+          updatedDelegate = modifyPart2.join('');
+          // save updates
+          fs.writeFileSync(appDelegatePath, updatedDelegate);
+          console.log('UPDATED:', appDelegateFileName);
+          resolve();
+        } else {
+          resolve();
         }
-
-
       } else {
         console.error(
           'ERROR: @nativescript/capacitor requires a Capacitor iOS target to be initialized. Be sure you have "npx cap add ios" in this project before installing.\n\n'
@@ -642,7 +641,7 @@ if (argv.action === 'install') {
 if (argv.action === 'uninstall') {
   if (hasIosApp) {
     //uninstall not available
-    console.log("uninstall not available")
+    console.log('uninstall not available');
   } else if (hasAndroidApp) {
     uninstallAndroid();
   }
