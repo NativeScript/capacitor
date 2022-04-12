@@ -1,7 +1,7 @@
 {
   "name": "nativescript",
   "dependencies": {
-    "@nativescript/core": "alpha",
-    "@nativescript/types": "~8.1.0"
+    "@nativescript/core": "~8.2.0",
+    "@nativescript/types": "~8.2.0"
   }
 }
