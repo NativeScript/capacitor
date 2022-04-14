@@ -109,9 +109,13 @@ public final class RuntimeHelper {
                         // will force deletion of previously extracted files in app/files directories
                         // see https://github.com/NativeScript/NativeScript/issues/4137 for reference
                         boolean removePreviouslyInstalledAssets = true;
+                        File metadata = new File(outputDir + "metadata");
+                        if (metadata.exists()) {
+                            metadata.delete();
+                        }
                         aE.extractAssets(context, "public", outputDir, extractPolicy, removePreviouslyInstalledAssets);
                         aE.extractAssets(context, "internal", outputDir, extractPolicy, removePreviouslyInstalledAssets);
-                        aE.extractAssets(context, "metadata", outputDir, extractPolicy, removePreviouslyInstalledAssets);
+                        aE.extractAssets(context, "metadata", outputDir, extractPolicy, false);
 
                         boolean shouldExtractSnapshots = true;
 
