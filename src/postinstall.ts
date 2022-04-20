@@ -12,7 +12,10 @@ const capacitorConfigName = 'capacitor.config.json';
 const capacitorConfigNameTS = 'capacitor.config.ts';
 const capacitorConfigPath = path.join(rootPath, capacitorConfigName);
 const capacitorConfigTSPath = path.join(rootPath, capacitorConfigNameTS);
-const xcodeProjName = 'ios/App/App.xcodeproj/project.pbxproj';
+const xcodeAppXcodeProjName = 'ios/App/App.xcodeproj';
+const xcodeProjName = `${xcodeAppXcodeProjName}/project.pbxproj`;
+const appDelegateFileName = 'ios/App/App/AppDelegate.swift';
+const podfileName = 'ios/App/Podfile';
 
 const podFilePostInstall = `
 post_install do |installer|
@@ -197,9 +200,6 @@ src/nativescript/package-lock.json
  * IOS EMBED
  */
 function installIOS(): Promise<void> {
-  const appDelegateFileName = 'ios/App/App/AppDelegate.swift';
-  const xcodeProjName = 'ios/App/App.xcodeproj/project.pbxproj';
-  const podfileName = 'ios/App/Podfile';
   const xcode = require('nativescript-dev-xcode'),
     projectPath = path.join(rootPath, xcodeProjName),
     podfilePath = path.join(rootPath, podfileName),
@@ -545,27 +545,31 @@ function uninstallAndroid(): Promise<void> {
         applicationEl.removeAttribute('android:name');
         fs.writeFileSync(mainAndroidManifestPath, serializer.serializeToString(mainAndroidManifestDocument));
       } else {
-        const applicationFile = path.join(rootPath, `android/app/src/main/java/${applicationName.replace(/\./g, '/')}`);
-        const application = fs.readFileSync(applicationFile);
-        const appContent = application.toString();
-        let has = 0;
-        if (appContent.indexOf('RuntimeHelper.initRuntime(this)') > -1) {
-          has++;
-        }
-
-        if (appContent.indexOf('.runScript(') > -1) {
-          has++;
-        }
-
-        if (appContent.indexOf('Application getInstance()') > -1) {
-          has++;
-        }
-
-        if (has === 3) {
-          console.log(
-            'To finish uninstalling \n Please use remove the following as a guide to clean up your custom Application Class\n' +
-              removalExampleApplicationContent
-          );
+        try {
+          const applicationFile = path.join(rootPath, `android/app/src/main/java/${applicationName.replace(/\./g, '/')}`);
+          const application = fs.readFileSync(applicationFile);
+          const appContent = application.toString();
+          let has = 0;
+          if (appContent.indexOf('RuntimeHelper.initRuntime(this)') > -1) {
+            has++;
+          }
+  
+          if (appContent.indexOf('.runScript(') > -1) {
+            has++;
+          }
+  
+          if (appContent.indexOf('Application getInstance()') > -1) {
+            has++;
+          }
+  
+          if (has === 3) {
+            console.log(
+              'To finish uninstalling \n Please use remove the following as a guide to clean up your custom Application Class\n' +
+                removalExampleApplicationContent
+            );
+          }
+        } catch (err) {
+          console.log('NativeScript Android uninstall error:', err);
         }
       }
     }
@@ -638,12 +642,57 @@ if (argv.action === 'install') {
   }
 }
 
+const uninstallComplete = () => {
+  console.log('@nativescript/capacitor successfully removed.');
+  console.log('\n');
+};
+const uninstallError = (error) => {
+  console.log('NativeScript uninstall error:', error);
+};
+
 if (argv.action === 'uninstall') {
   if (hasIosApp) {
-    //uninstall not available
-    console.log('uninstall not available');
+    // invoke ruby script to remove from project
+    const child = spawn(
+      `ruby`,
+      [
+        './node_modules/@nativescript/capacitor/ios/nativescript.rb',
+        'clean',
+        path.resolve(path.join(rootPath, xcodeAppXcodeProjName)),
+      ],
+      {
+        cwd: path.resolve(rootPath),
+        stdio: 'inherit',
+        shell: true,
+      }
+    );
+    child.on('error', (error) => {
+      uninstallError(error);
+    });
+    child.on('close', (res) => {
+      child.kill();
+      if (hasAndroidApp) {
+        uninstallAndroid().then(
+          () => {
+            uninstallComplete();
+          },
+          (err) => {
+            uninstallError(err);
+          }
+        );
+      } else {
+        uninstallComplete();
+      }
+    });
   } else if (hasAndroidApp) {
-    uninstallAndroid();
+    uninstallAndroid().then(
+      () => {
+        uninstallComplete();
+      },
+      (err) => {
+        uninstallError(err);
+      }
+    );
   }
 }
 
