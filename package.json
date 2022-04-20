@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/capacitor",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "NativeScript for Capacitor",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -20,7 +20,8 @@
   ],
   "bin": {
     "build-nativescript": "./bin/build-nativescript.js",
-    "dev-nativescript": "./bin/dev-nativescript.js"
+    "dev-nativescript": "./bin/dev-nativescript.js",
+    "uninstall-nativescript": "./bin/uninstall-nativescript.js"
   },
   "author": "NativeScript TSC",
   "license": "Apache-2.0",
@@ -54,8 +55,7 @@
     "setup": "npm i --legacy-peer-deps --ignore-scripts && ts-patch install",
     "watch": "tsc --watch",
     "prepublishOnly": "npm run build",
-    "postinstall": "node dist/esm/postinstall --action install",
-    "postuninstall": "node dist/esm/postinstall --action uninstall"
+    "postinstall": "node dist/esm/postinstall --action install"
   },
   "dependencies": {
     "@nativescript/webpack": "~5.0.0",
