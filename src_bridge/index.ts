@@ -678,3 +678,43 @@ export const runOnUIThread = (function () {
     };
   }
 })();
+
+/**
+ * Used to communicate platform api events back/forth from custom native api development to the Capacitor/Ionic app
+ */
+
+let nsCapEventHandlers: { [key: string]: Array<Function> };
+
+export const notifyEvent = (name: string, data?: any) => {
+  if (nsCapEventHandlers && nsCapEventHandlers[name]) {
+    for (const callback of nsCapEventHandlers[name]) {
+      callback(data);
+    }
+  }
+}
+global.notifyEvent = notifyEvent;
+
+export const onEvent = (name: string, callback: Function) => {
+  if (!nsCapEventHandlers) {
+    nsCapEventHandlers = {};
+  }
+  if (!nsCapEventHandlers[name]) {
+    nsCapEventHandlers[name] = [];
+  }
+  nsCapEventHandlers[name].push(callback);
+}
+global.onEvent = onEvent;
+
+export const removeEvent = (name: string, callback?: Function) => {
+  if (nsCapEventHandlers && nsCapEventHandlers[name]) {
+    if (callback) {
+      const index = nsCapEventHandlers[name].findIndex(cb => cb === callback);
+      if (index > -1) {
+        nsCapEventHandlers[name].splice(index, 1);
+      }
+    } else {
+      delete nsCapEventHandlers[name];
+    }
+  }
+}
+global.removeEvent = removeEvent;
