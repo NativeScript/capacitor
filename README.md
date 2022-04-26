@@ -5,7 +5,7 @@ NativeScript for Capacitor
 ## Install
 
 ```bash
-npm install @nativescript/capacitor
+yarn add @nativescript/capacitor
 npx cap sync
 ```
 
