@@ -113,7 +113,13 @@ function addProjectManagedNativeScript() {
               encoding: 'UTF-8',
             });
             if (nsTsConfigContent) {
-              const nsTsConfigJson = JSON.parse(stripJsonComments(nsTsConfigContent));
+              let nsTsConfigJson: any;
+              try {
+                nsTsConfigJson = JSON.parse(stripJsonComments(nsTsConfigContent));
+              } catch (err) {
+                // fallback as above can cause issues on some setups
+                nsTsConfigJson = require('typescript').parseConfigFileTextToJson('tsconfig.json', nsTsConfigContent).config;
+              }
               if (nsTsConfigJson && nsTsConfigJson.compilerOptions && nsTsConfigJson.compilerOptions.outDir) {
                 nsTsConfigJson.compilerOptions.outDir = `../../${buildFolder}/nativescript`;
               }
@@ -138,7 +144,13 @@ function addProjectManagedNativeScript() {
       encoding: 'UTF-8',
     });
     if (tsConfigContent) {
-      const tsConfigJson = JSON.parse(stripJsonComments(tsConfigContent));
+      let tsConfigJson: any;
+      try {
+        tsConfigJson = JSON.parse(stripJsonComments(tsConfigContent));
+      } catch (err) {
+        // fallback as above can cause issues on some setups
+        tsConfigJson = require('typescript').parseConfigFileTextToJson('tsconfig.json', tsConfigContent).config;
+      }
       if (tsConfigJson) {
         if (!tsConfigJson.exclude) {
           tsConfigJson.exclude = [];
