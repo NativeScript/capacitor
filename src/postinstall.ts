@@ -17,12 +17,13 @@ const xcodeProjName = `${xcodeAppXcodeProjName}/project.pbxproj`;
 const appDelegateFileName = 'ios/App/App/AppDelegate.swift';
 const podfileName = 'ios/App/Podfile';
 
+const podFilePostInstallStep = `nativescript_capacitor_post_install(installer)`;
 const podFilePostInstall = `
 post_install do |installer|
-  nativescript_capacitor_post_install(installer)
+  ${podFilePostInstallStep}
 end
             `;
-const podFileNSPods = `\n pod 'NativeScript' \n pod 'NativeScriptUI'\n`;
+const podFileNSPods = `\n pod 'NativeScript', '~> 8.3.3' \n pod 'NativeScriptUI'\n`;
 const requireNSCode = `require_relative '../../node_modules/@nativescript/capacitor/ios/nativescript.rb'\n`;
 
 // TODO: allow to be installed in {N} projects as well when using CapacitorView
@@ -232,11 +233,21 @@ function installIOS(): Promise<void> {
           if (podfileContent) {
             const podsComment = 'Add your Pods here';
             const podsCommentIndex = podfileContent.indexOf(podsComment);
-            const modifyPartPods = podfileContent.split('');
+            let modifyPartPods: Array<string> = podfileContent.split('');
             modifyPartPods.splice(podsCommentIndex + podsComment.length + 1, 0, podFileNSPods);
-            let updatedPodfile = modifyPartPods.join('');
+            let updatedPodfile: string = modifyPartPods.join('');
 
-            updatedPodfile = requireNSCode + updatedPodfile + podFilePostInstall;
+            const assertDeploymentPostInstall = 'assertDeploymentTarget(installer)';
+            const assertDeploymentPostInstallIndex = updatedPodfile.indexOf(assertDeploymentPostInstall);
+            if (assertDeploymentPostInstallIndex > -1) {
+              modifyPartPods = updatedPodfile.split('');
+              modifyPartPods.splice(assertDeploymentPostInstallIndex + assertDeploymentPostInstall.length + 1, 0, `\n  ${podFilePostInstallStep}\n`);
+              updatedPodfile = modifyPartPods.join('');
+
+              updatedPodfile = requireNSCode + updatedPodfile;
+            } else {
+              updatedPodfile = requireNSCode + updatedPodfile + podFilePostInstall;
+            }
 
             fs.writeFileSync(podfilePath, updatedPodfile);
             console.log('UPDATED:', podfilePath);
