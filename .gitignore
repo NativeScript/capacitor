@@ -62,7 +62,6 @@ captures
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
-!embed/ios/internal/metadata-generator/bin
 
 # Executables
 !bin/build-nativescript.js
