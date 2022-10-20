@@ -239,7 +239,7 @@ def restore_state(user_project)
       'nsConfig.baseDir = URL(string: "public", relativeTo: Bundle.main.resourceURL)?.path',
       'nsConfig.applicationPath = "nativescript"',
       "self.nativescript = NativeScript.init(config: nsConfig)",
-      "self.nativescript?.runMainScript()"
+      "self.nativescript?.runMainApplication()"
     ]
     
     to_slice.each do |line|
