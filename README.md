@@ -6,6 +6,7 @@ NativeScript for Capacitor
 
 ```bash
 yarn add @nativescript/capacitor
+yarn build:mobile
 npx cap sync
 ```
 
