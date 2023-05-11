@@ -1,5 +1,5 @@
 export default {
-  input: 'dist/esm/index.js',
+  input: 'dist/esm/index.mjs',
   output: [
     {
       file: 'dist/plugin.js',
@@ -19,4 +19,12 @@ export default {
     },
   ],
   external: ['@capacitor/core'],
+  onwarn: function (warning) {
+    if (warning.code === 'THIS_IS_UNDEFINED') {
+      return;
+    }
+
+    // console.warn everything else
+    console.warn(warning.message);
+  },
 };

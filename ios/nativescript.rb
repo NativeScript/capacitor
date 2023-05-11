@@ -27,7 +27,7 @@ def nativescript_post_install(installer)
     save_current_state(installer)
     
     pods_path = File.expand_path("..", installer.pods_project.path)
-    internal_path = pods_path + "/NativeScript/resources"
+    internal_path = pods_path + "/NativeScriptSDK/resources"
     src_root = File.expand_path("..", pods_path)
     @internal_dest = File.expand_path("internal", src_root)
     FileUtils.copy_entry internal_path, @internal_dest 
@@ -220,7 +220,7 @@ def restore_state(user_project)
 
     podfile = File.read(get_podfile_path(user_project))
     podfile.slice! "require_relative '../../node_modules/@nativescript/capacitor/ios/nativescript.rb'"
-    podfile.slice! "pod 'NativeScript'"
+    podfile.slice! "pod 'NativeScriptSDK', '~> 8.4.2'"
     podfile.slice! "pod 'NativeScriptUI'"
     podfile.slice! "nativescript_capacitor_post_install(installer)"
 
