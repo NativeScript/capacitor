@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/capacitor",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "NativeScript for Capacitor",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.mjs",
