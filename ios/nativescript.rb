@@ -221,7 +221,7 @@ def restore_state(user_project)
     podfile = File.read(get_podfile_path(user_project))
     podfile.slice! "require_relative '../../node_modules/@nativescript/capacitor/ios/nativescript.rb'"
     podfile.slice! "pod 'NativeScriptSDK', '~> 8.4.2'"
-    podfile.slice! "pod 'NativeScriptUI'"
+    podfile.slice! "pod 'NativeScriptUI', '~> 0.1.2'"
     podfile.slice! "nativescript_capacitor_post_install(installer)"
 
     save_podfile(podfile, user_project)

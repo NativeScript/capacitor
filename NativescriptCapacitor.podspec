@@ -14,6 +14,6 @@ Pod::Spec.new do |s|
   s.ios.deployment_target  = '13.0'
   s.dependency 'Capacitor'
   s.dependency 'NativeScriptSDK', '~> 8.4.2'
-  s.dependency 'NativeScriptUI'
+  s.dependency 'NativeScriptUI', '~> 0.1.2'
   s.swift_version = '5.1'
 end

@@ -29,7 +29,7 @@ post_install do |installer|
   ${podFilePostInstallStep}
 end
             `;
-const podFileNSPods = `\n pod 'NativeScriptSDK', '~> 8.4.2' \n pod 'NativeScriptUI'\n`;
+const podFileNSPods = `\n pod 'NativeScriptSDK', '~> 8.4.2' \n pod 'NativeScriptUI', '~> 0.1.2'\n`;
 const requireNSCode = `require_relative '../../node_modules/@nativescript/capacitor/ios/nativescript.rb'\n`;
 
 // TODO: allow to be installed in {N} projects as well when using CapacitorView
