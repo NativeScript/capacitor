@@ -39,7 +39,7 @@ const getAvailableDevices = () => {
 
 const selectTargetDevice = async (devicesAvailable) => {
     if (devicesAvailable) {
-        targetDevice = await prompts({
+        const targetDevice = await prompts({
             type: 'select',
             name: 'value',
             message: 'Please choose a target device',
