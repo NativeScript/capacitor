@@ -1,91 +1,102 @@
 #!/usr/bin/env node
 import chokidar from 'chokidar';
 import { execSync } from 'child_process';
-import prompts  from 'prompts';
-import path  from 'path';
-import fs  from 'fs';
+import prompts from 'prompts';
+import path from 'path';
 
 const projectDir = process.cwd();
-const buildDir = path.resolve(
-  projectDir,
-  'src',
-  'nativescript'
-);
+const buildDir = path.resolve(projectDir, 'src', 'nativescript');
+
+const program = path.basename(process.argv[1], '.mjs');
 const platform = process.argv[2];
+let targetDevice = process.argv[3] || null;
 
+const printUsageInformation = () => {
+  console.log(`Usage: ${program} platform [target]\n`);
+  console.log('Arguments:');
+  console.log('   platform          ios/android\n');
+  console.log('Options:');
+  console.log('   target            specific id of target device\n\n');
+};
 
-const getAvailableDevices = () => {
-    if (platform !== 'ios' && platform !== 'android') {
-        console.log("Please use valid platform (ios/android)")
-        return;
-    } 
-    let devices = [];
-    const iosRegex = /(iOS \d+)/g;
-    const androidRegex = /(API \d+)/g;
+const getAvailableDevices = (platform) => {
+  const iosRegex = /(iOS \d+)/g;
+  const androidRegex = /(API \d+)/g;
 
-    const result = execSync(`npx cap run ${platform} --list`).toString()
-        .split('\n')
-        .filter(line => line.match(platform === 'ios' ? iosRegex : androidRegex));
+  const result = execSync(`npx cap run ${platform} --list`)
+    .toString()
+    .split('\n')
+    .filter((line) => line.match(platform === 'ios' ? iosRegex : androidRegex));
 
-    result.forEach(device => {
-        const id = device.split(" ").pop();
-        devices.push({
-            title: device,
-            value: id
-        })
-    })
-    return devices;
-}
+  return result.map((device) => {
+    const id = device.split(' ').pop();
+    return {
+      title: device,
+      value: id,
+    };
+  });
+};
 
 const selectTargetDevice = async (devicesAvailable) => {
-    if (devicesAvailable) {
-        const targetDevice = await prompts({
-            type: 'select',
-            name: 'value',
-            message: 'Please choose a target device',
-            choices: devicesAvailable,
-            initial: 0
-        });
-        return targetDevice.value;
-    }
-}
+  const targetDevice = await prompts({
+    type: 'select',
+    name: 'value',
+    message: 'Please choose a target device',
+    choices: devicesAvailable,
+    initial: 0,
+  });
+  return targetDevice.value;
+};
 
 const buildApp = () => {
-    execSync('npm run build:mobile', {stdio: 'inherit'});
-}
+  execSync('npm run build:mobile', { stdio: 'inherit' });
+};
 
-const runOnTarget = (targetDevice) => {
-    execSync(`npx cap run ${platform} --target ${targetDevice}`, {stdio: 'inherit'})
-}
+const runOnTarget = (platform, targetDevice) => {
+  execSync(`npx cap run ${platform} --target ${targetDevice}`, { stdio: 'inherit' });
+};
 
-const watchFiles = (targetDevice) => {
-    buildApp()
-    runOnTarget(targetDevice);
-    console.log("Watching for file changes...");
+const watchFiles = (platform, targetDevice) => {
+  buildApp();
+  runOnTarget(platform, targetDevice);
+  console.log('Watching for file changes...');
 
-    chokidar.watch(`${buildDir}/**/*.ts`, {
-        interval: 100,
-        binaryInterval: 300,
-        awaitWriteFinish: {
-            stabilityThreshold: 2000,
-            pollInterval: 100
-        },
-    }).on('change', (event, path) => {
-        console.log("File change detected.");
-        buildApp()
-        runOnTarget(targetDevice);
-        console.log("Watching for file changes...");
+  chokidar
+    .watch(`${buildDir}/**/*.ts`, {
+      interval: 100,
+      binaryInterval: 300,
+      awaitWriteFinish: {
+        stabilityThreshold: 2000,
+        pollInterval: 100,
+      },
+    })
+    .on('change', (_event, _path) => {
+      console.log('File change detected.');
+      buildApp();
+      runOnTarget(platform, targetDevice);
+      console.log('Watching for file changes...');
     });
-}
+};
 (async () => {
+  if (platform !== 'ios' && platform !== 'android') {
+    printUsageInformation();
+    console.log('Please use a valid platform (ios/android)');
+    return;
+  }
 
-    let targetDevice = await selectTargetDevice(getAvailableDevices());
-    if (targetDevice) {
-        watchFiles(targetDevice);
+  if (!targetDevice) {
+    const availableDevices = getAvailableDevices(platform);
+    if (!availableDevices && availableDevices.length) {
+      console.error('Error: no available devices found');
+      return;
     }
-    
+
+    targetDevice = await selectTargetDevice(availableDevices);
+  }
+
+  if (targetDevice) {
+    watchFiles(platform, targetDevice);
+  }
 })();
 
-export function init() {
-  
-}
+export function init() {}
