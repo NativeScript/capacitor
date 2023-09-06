@@ -15,7 +15,7 @@ const printUsageInformation = () => {
   console.log('Arguments:');
   console.log('   platform          ios/android\n');
   console.log('Options:\n');
-  console.log('   target            specific id of target device\n');
+  console.log('   target            specific id of target device\n\n');
 };
 
 const getAvailableDevices = (platform) => {
@@ -78,8 +78,8 @@ const watchFiles = (platform, targetDevice) => {
 };
 (async () => {
   if (platform !== 'ios' && platform !== 'android') {
-    console.log('Please use a valid platform (ios/android)');
     printUsageInformation();
+    console.log('Please use a valid platform (ios/android)');
     return;
   }
 
