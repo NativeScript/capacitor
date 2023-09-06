@@ -58,7 +58,7 @@ const runOnTarget = (platform, targetDevice) => {
 
 const watchFiles = (platform, targetDevice) => {
   buildApp();
-  runOnTarget(targetDevice);
+  runOnTarget(platform, targetDevice);
   console.log('Watching for file changes...');
 
   chokidar
@@ -95,7 +95,7 @@ const watchFiles = (platform, targetDevice) => {
   }
 
   if (targetDevice) {
-    watchFiles(targetDevice);
+    watchFiles(platform, targetDevice);
   }
 })();
 
