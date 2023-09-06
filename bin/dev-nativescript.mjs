@@ -7,11 +7,12 @@ import path from 'path';
 const projectDir = process.cwd();
 const buildDir = path.resolve(projectDir, 'src', 'nativescript');
 
+const program = path.basename(process.argv[1], '.mjs');
 const platform = process.argv[2];
 let targetDevice = process.argv[3] || null;
 
 const printUsageInformation = () => {
-  console.log('Usage: dev-native platform [target]\n');
+  console.log(`Usage: ${program} platform [target]\n`);
   console.log('Arguments:');
   console.log('   platform          ios/android\n');
   console.log('Options:');
