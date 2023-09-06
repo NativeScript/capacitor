@@ -3,7 +3,6 @@ import chokidar from 'chokidar';
 import { execSync } from 'child_process';
 import prompts  from 'prompts';
 import path  from 'path';
-import fs  from 'fs';
 
 const projectDir = process.cwd();
 const buildDir = path.resolve(
