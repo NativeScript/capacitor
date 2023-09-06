@@ -14,7 +14,7 @@ const printUsageInformation = () => {
   console.log('Usage: dev-native platform [target]\n');
   console.log('Arguments:');
   console.log('   platform          ios/android\n');
-  console.log('Options:\n');
+  console.log('Options:');
   console.log('   target            specific id of target device\n\n');
 };
 
